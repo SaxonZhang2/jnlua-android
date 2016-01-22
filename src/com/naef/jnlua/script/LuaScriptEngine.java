@@ -48,6 +48,18 @@ class LuaScriptEngine extends AbstractScriptEngine implements Compilable,
 	private LuaScriptEngineFactory factory;
 	private LuaState luaState;
 
+	// -- Output redirection
+	private LuaSystem luaSystem = new LuaSystem();
+
+	private static final String OUTPUT_REDIRECT =
+	        "print = function(...)\n" +
+	        "  for _,arg in ipairs({...}) do\n" +
+	        "    __sys:print(arg)\n" +
+	        "    __sys:print(\"\\t\")\n" +
+	        "  end\n" +
+	        "  __sys:print(\"\\n\")\n" +
+	        "end\n";
+
 	// -- Construction
 	/**
 	 * Creates a new instance.
@@ -60,6 +72,15 @@ class LuaScriptEngine extends AbstractScriptEngine implements Compilable,
 		// Configuration
 		context.setBindings(createBindings(), ScriptContext.ENGINE_SCOPE);
 		luaState.openLibs();
+
+		// Initialize
+		Bindings engineBindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+		engineBindings.put("__sys", luaSystem);
+		try {
+            eval(OUTPUT_REDIRECT);
+        } catch (ScriptException e) {
+            e.printStackTrace();
+        }
 	}
 
 	// -- ScriptEngine methods
@@ -273,6 +294,9 @@ class LuaScriptEngine extends AbstractScriptEngine implements Compilable,
 				put(READER, context.getReader());
 				put(WRITER, context.getWriter());
 				put(ERROR_WRITER, context.getErrorWriter());
+
+				// Update luaSystem
+				luaSystem.setWriter(context.getWriter());
 
 				// Arguments
 				argv = (Object[]) context.getAttribute(ARGV);
