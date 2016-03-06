@@ -2182,6 +2182,8 @@ static int calljavafunction (lua_State *L) {
 	throwable = (*thread_env)->ExceptionOccurred(thread_env);
 	if (throwable) {
 		/* Push exception & clear */
+		(*thread_env)->ExceptionClear(thread_env);
+
 		luaL_where(L, 1);
 		where = tostring(L, -1);
 		luaerror = (*thread_env)->NewObject(thread_env, luaerror_class, luaerror_id, where, throwable);
@@ -2190,8 +2192,7 @@ static int calljavafunction (lua_State *L) {
 		} else {
 			lua_pushliteral(L, "JNI error: NewObject() failed creating Lua error");
 		}
-		(*thread_env)->ExceptionClear(thread_env);
-		
+
 		/* Error out */
 		return lua_error(L);
 	}
